@@ -27,7 +27,21 @@ app.use(
 
 app.use(express.json({ limit: "1mb" }));
 
-app.get("/api/health", (req, res) => res.json({ status: "ok" }));
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Pet Paws API is running 🚀",
+  });
+});
+
+// Health Check Route
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    status: "ok",
+    database: "connected",
+  });
+});
 
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
