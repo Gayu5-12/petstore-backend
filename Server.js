@@ -1,25 +1,64 @@
-const express = require('express');
-const mongoose = require('mongoose');
-require('dotenv').config();
-const cors = require('cors');
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
+console.log(process.env.EMAIL_USER);
+console.log(process.env.EMAIL_PASS);
+
+const { getEnv } = require("./config/env");
+const { connectDB } = require("./config/db");
+
+const authRoutes = require("./routers/authRoutes");
+const productRoutes = require("./routers/productRoutes");
+const petRoutes = require("./routers/petRoutes");
+const adminRoutes =require("./routers/adminRoutes");
+const adoptionRoutes =require("./routers/adoptionRoutes");
+const sellRoutes =require("./routers/sellRoutes");
 
 const app = express();
-app.use(express.json());
-app.use(cors());
-app.listen(5000, () => {
-    console.log("Server is running on port 5000");
-}
+
+const { port, mongoUri } = getEnv();
+
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    credentials: true,
+  })
 );
 
-const UserRouter = require("./Routers/UserRouters");
-app.use("/api/user", UserRouter);
+app.use(express.json({ limit: "1mb" }));
 
-mongoose
-.connect(process.env.MONGO_URL)
-.then(() =>{
-    console.log("Connected to MongoDB");
-})
-.catch((err) =>{
-    console.log("Error connecting to MongoDB", err);
+app.get("/api/health", (req, res) => res.json({ status: "ok" }));
+
+app.use("/api/auth", authRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/pets", petRoutes);
+app.use("/api/admin",adminRoutes);
+app.use("/api/adoptions", adoptionRoutes);
+app.use("/api/sells", sellRoutes);
+
+app.use((req, res) => {
+  res.status(404).json({
+    message: "Route not found",
+  });
 });
+
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" });
+});
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ message: "Server error" });
+});
+
+(async () => {
+  try {
+    await connectDB(mongoUri);
+    console.log("MongoDB connected");
+    app.listen(port, () => console.log(`Server running on port ${port}`));
+  } catch (e) {
+    console.error("MongoDB connection error:", e);
+    process.exit(1);
+  }
+})();
 
