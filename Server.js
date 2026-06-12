@@ -20,7 +20,13 @@ const { port, mongoUri } = getEnv();
 
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    origin: function (origin, callback) {
+      const allowed = (process.env.CORS_ORIGIN || "http://localhost:3000")
+        .split(",")
+        .map((o) => o.trim());
+      if (!origin || allowed.includes(origin)) return callback(null, true);
+      callback(new Error("Not allowed by CORS: " + origin));
+    },
     credentials: true,
   })
 );
@@ -54,10 +60,6 @@ app.use((req, res) => {
   res.status(404).json({
     message: "Route not found",
   });
-});
-
-app.use((req, res) => {
-  res.status(404).json({ message: "Route not found" });
 });
 
 app.use((err, req, res, next) => {
